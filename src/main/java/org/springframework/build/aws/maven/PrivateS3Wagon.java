@@ -40,6 +40,7 @@ import com.amazonaws.AmazonServiceException;
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
+import com.amazonaws.auth.BasicSessionCredentials;
 import com.amazonaws.regions.DefaultAwsRegionProviderChain;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.s3.AmazonS3;
@@ -96,6 +97,10 @@ public final class PrivateS3Wagon extends AbstractWagon {
 
             this.bucketName = S3Utils.getBucketName(repository);
             this.baseDirectory = S3Utils.getBaseDirectory(repository);
+            BasicSessionCredentials basicSessionCredentials =
+                new BasicSessionCredentials(System.getenv("AWS_ACCESS_KEY_ID"),
+                                            System.getenv("AWS_SECRET_ACCESS_KEY"),
+                                            System.getenv("AWS_SESSION_TOKEN"));
 
             // if AuthenticationInfo is null or empty, use the default provider from AWS SDK
             boolean defaultCredProvider = false;
@@ -113,7 +118,7 @@ public final class PrivateS3Wagon extends AbstractWagon {
                 this.amazonS3 = new AmazonS3Client(new DefaultAWSCredentialsProviderChain(), clientConfiguration);
             } else {
                 AWSCredentials awsCredentials = new AuthenticationInfoAWSCredentials(authenticationInfo);
-                this.amazonS3 = new AmazonS3Client(awsCredentials, clientConfiguration);
+                this.amazonS3 =  new AmazonS3Client(basicSessionCredentials);
             }
 
             try {
@@ -143,7 +148,7 @@ public final class PrivateS3Wagon extends AbstractWagon {
     private com.amazonaws.regions.Region parseRegion(String region) {
         return com.amazonaws.regions.Region.getRegion(Regions.fromName(region));
     }
-    
+
     @Override
     protected void disconnectFromRepository() {
         this.amazonS3 = null;
